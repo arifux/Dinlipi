@@ -187,15 +187,14 @@
     .dv-sep{ display:none; }
     .dv-lbl{ flex-direction:column; gap:0; }
   }
-  .dv-tiles{ display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:10px; margin-top:14px; }
-  @media (max-width:720px){ .dv-tiles{ grid-template-columns:minmax(0,1fr); } }
+  .dv-tiles{ display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:10px; margin-top:14px; }
   .dv-tile{ background:var(--card2); border-radius:18px; padding:14px 16px; min-width:0; }
   .dv-tile .lbl{ font-size:14px; font-weight:500; color:var(--dim); margin-bottom:4px; }
-  .dv-tile .v{ font-weight:700; font-size:clamp(22px, 4.4vw, 28px); line-height:1.25; white-space:nowrap; font-variant-numeric:tabular-nums; }
+  .dv-tile .v{ font-weight:700; font-size:clamp(20px, 4.4vw, 28px); line-height:1.25; white-space:nowrap; font-variant-numeric:tabular-nums; }
   .dv-tile .v small{ font-size:.5em; font-weight:600; margin-left:6px; color:var(--dim); white-space:normal; }
   .dv-tile .sub{ margin-top:4px; font-size:13.5px; line-height:1.55; color:var(--dim); font-variant-numeric:tabular-nums; }
   .dv-tile .aq-bar{ background:var(--fill2); }
-  .aq-dot{ display:inline-block; width:.4em; height:.4em; margin-right:.3em; border-radius:50%; background:var(--c, var(--faint)); vertical-align:.12em; }
+  @media (max-width:420px){ .dv-tile{ padding:12px 12px 14px; } .dv-tile .lbl{ font-size:13px; } .dv-tile .sub{ font-size:13px; } }
   .dv-open{ display:flex; align-items:center; justify-content:center; gap:6px; width:100%; height:46px; margin-top:12px; border-radius:14px; background:var(--fill); font-size:16px; font-weight:600; color:var(--blue); transition:background-color .15s, transform .15s; }
   .dv-open:hover{ background:var(--fill2); }
   .dv-open:active{ transform:scale(.985); }
@@ -1415,14 +1414,6 @@
     });
     return { m:best.m, d:best.d, rise:rise / n, set:set / n, len:len / n, lo:lo, hi:hi };
   }
-  function dvAqStats(){
-    var ok = [];
-    if (AQ.data) AQ.data.forEach(function(a, i){ if (a) ok.push({ i:i, a:a }); });
-    if (!ok.length) return null;
-    var sum = 0; ok.forEach(function(o){ sum += o.a.aqi; });
-    var sorted = ok.slice().sort(function(x, y){ return x.a.aqi - y.a.aqi; });
-    return { avg:Math.round(sum / ok.length), n:ok.length, lo:sorted[0], hi:sorted[sorted.length - 1] };
-  }
   function dvNote(){
     return '<div class="wx-note">' + (AQ.stale ? 'অফলাইন: সর্বশেষ সংরক্ষিত বায়ুর মান দেখানো হচ্ছে · ' : '')
       + 'বায়ুর মান: <a href="https://open-meteo.com/en/docs/air-quality-api" target="_blank" rel="noopener noreferrer">Open-Meteo</a> (US AQI, মডেল-ভিত্তিক অনুমান; স্থানীয় সেন্সরের পাঠ ভিন্ন হতে পারে) · '
@@ -1434,22 +1425,6 @@
       + '<div class="sub">রাত ' + fmtLength(0, 1440 - r.len, false) + '</div>'
       + '<div class="sub">সূর্যোদয় ' + timeText(r.rise) + '<br>সূর্যাস্ত ' + timeText(r.set) + '</div>'
       + '<div class="sub">বিভাগভেদে ' + fmtLength(0, r.lo, false) + ' – ' + fmtLength(0, r.hi, false) + '</div></div>';
-  }
-  function dvAqTile(){
-    var st = dvAqStats(), lbl = 'বায়ুর মান · US AQI';
-    if (!st){
-      return '<div class="dv-tile"><div class="lbl">' + lbl + '</div>'
-        + (AQ.state === 'err'
-          ? '<p class="dv-msg">বায়ুর মানের তথ্য এখন আনা যাচ্ছে না।<button data-action="aq-retry">আবার চেষ্টা করুন</button></p>'
-          : '<div class="v">…</div><div class="sub" role="status">বায়ুর মান আনা হচ্ছে…</div>') + '</div>';
-    }
-    var lv = aqLevel(st.avg);
-    return '<div class="dv-tile" style="--c:' + lv.c + '"><div class="lbl">' + lbl + '</div>'
-      + '<div class="v"><span class="aq-dot"></span>' + bnNum(st.avg) + '<small>' + lv.t + '</small></div>'
-      + '<div class="aq-bar" role="presentation"><b style="--w:' + Math.min(100, st.avg / 3) + '%;--c:' + lv.c + '"></b></div>'
-      + '<div class="sub">আট বিভাগের গড়</div>'
-      + (st.n > 1 ? '<div class="sub">সবচেয়ে ভালো: ' + DIVISIONS[st.lo.i].n + ' (' + bnNum(st.lo.a.aqi) + ')<br>সবচেয়ে খারাপ: ' + DIVISIONS[st.hi.i].n + ' (' + bnNum(st.hi.a.aqi) + ')</div>' : '')
-      + '</div>';
   }
   function dvCards(ext, aq){
     return DIVISIONS.map(function(dv, i){
@@ -1477,9 +1452,9 @@
     var year = state.year, ext = dvExtremes(year);
     var el = document.getElementById('divBox');
     if (el && state.view === 'day'){
-      el.innerHTML = '<div class="dv-head"><div><h3 class="dv-ttl" id="dvTtl">বাংলাদেশ · দিন-রাত ও বায়ুর মান</h3>'
-        + '<p class="dv-sub">' + bnNum(year) + ' সালের সবচেয়ে বড় ও ছোট দিন-রাত আর এখনকার বায়ুর মান, আট বিভাগের গড়ে</p></div></div>'
-        + '<div class="dv-tiles">' + dvTile('সবচেয়ে বড় দিন', dvAgg(ext, 'longest')) + dvTile('সবচেয়ে ছোট দিন', dvAgg(ext, 'shortest')) + dvAqTile() + '</div>'
+      el.innerHTML = '<div class="dv-head"><div><h3 class="dv-ttl" id="dvTtl">বাংলাদেশ · বড় ও ছোট দিন-রাত</h3>'
+        + '<p class="dv-sub">' + bnNum(year) + ' সালের সবচেয়ে বড় ও ছোট দিন-রাত, আট বিভাগের গড়ে। বিভাগ অনুযায়ী দিন-রাত ও বায়ুর মান ড্রয়ারে দেখুন।</p></div></div>'
+        + '<div class="dv-tiles">' + dvTile('সবচেয়ে বড় দিন', dvAgg(ext, 'longest')) + dvTile('সবচেয়ে ছোট দিন', dvAgg(ext, 'shortest')) + '</div>'
         + '<button type="button" class="dv-open" data-action="open-div">আট বিভাগের বিস্তারিত দেখুন <span aria-hidden="true">›</span></button>';
     }
     if (dd && dd.open) renderDivPop();
