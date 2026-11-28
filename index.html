@@ -125,6 +125,16 @@
     *{ transition:none !important; animation:none !important; }
   }
 
+  /* ---------- header glow: soft 0 -> 100% gradient in the colour of the selected date's season ---------- */
+  @property --hs{ syntax:'<color>'; inherits:true; initial-value:transparent; }
+  html{ --hs:transparent; --hs-a:26%; transition:--hs .7s ease; }
+  :root[data-theme="dark"]{ --hs-a:30%; }
+  body{ position:relative; }
+  body::before{
+    content:''; position:absolute; left:0; right:0; top:0; height:min(420px, 62vh); z-index:-1; pointer-events:none;
+    background:linear-gradient(180deg, color-mix(in srgb, var(--hs) var(--hs-a), transparent) 0%, color-mix(in srgb, var(--hs) calc(var(--hs-a) * .45), transparent) 45%, transparent 100%);
+  }
+
   /* ---------- header ---------- */
   .head{ display:flex; justify-content:space-between; align-items:center; gap:16px 20px; margin-bottom:24px; }
   .head-main{ min-width:0; flex:1 1 auto; }
@@ -1153,6 +1163,7 @@
       el.querySelector('.tag').textContent = on ? (isToday ? 'এখন' : 'নির্বাচিত') : '';
     });
     document.getElementById('carLabel').textContent = (isToday ? 'এখন - ' : 'নির্বাচিত তারিখে - ') + SEASON[cur].bn + 'কাল';
+    document.documentElement.style.setProperty('--hs', 'var(--' + cur + ')');
     renderSeasonNow(cur);
     if (cur !== carCur){
       carCur = cur;
